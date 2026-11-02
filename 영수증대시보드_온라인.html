@@ -164,29 +164,31 @@ function clearAll(){files=[];rows=[];$("thumbs").innerHTML="";$("dash").classLis
 /* 이미지 → base64 (긴 변 1600px로 축소) */
 function toB64(f){return new Promise((res,rej)=>{
   const im=new Image();im.onload=()=>{
-    const s=Math.min(1,1600/Math.max(im.width,im.height));
+    const s=Math.min(1,2200/Math.max(im.width,im.height));
     const c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;
     c.getContext("2d").drawImage(im,0,0,c.width,c.height);
     res(c.toDataURL("image/jpeg",.88).split(",")[1])};
   im.onerror=rej;im.src=URL.createObjectURL(f)})}
 
-const PROMPT=`이 영수증 이미지를 읽고 아래 JSON 객체 하나만 출력하세요(설명·코드블록 금지).
-{"date":"YYYY-MM-DD","store":"상호","items":"주요 품목 요약(쉼표로, 40자 이내)","amount":합계금액(숫자),"vat":부가세(숫자, 표기 없으면 합계의 10/110로 계산),"payment":"카드|현금|계좌이체|기타","category":"식비·식자재|소모품|교통·주유|접대비|공과금|기타 중 하나","confidence":0~1 사이 전반적 인식 확신도,"low_fields":["확신이 낮은 필드명들"],"personal":개인 지출로 보이면 true(편의점 소액, 개인 물품 등)}
+const PROMPT=`이 이미지에 있는 영수증을 모두 찾아 각각 읽고, 아래 형식의 JSON 배열 하나만 출력하세요(설명·코드블록 금지).
+영수증이 1장이면 원소 1개짜리 배열, 하나도 없으면 [] 로 출력하세요. 서로 다른 영수증은 절대 합치지 마세요. 일부만 보이는 영수증은 low_fields에 해당 필드를 포함하세요.
+[{"date":"YYYY-MM-DD","store":"상호","items":"주요 품목 요약(쉼표로, 40자 이내)","amount":합계금액(숫자),"vat":부가세(숫자, 표기 없으면 합계의 10/110로 계산),"payment":"카드|현금|계좌이체|기타","category":"식비·식자재|소모품|교통·주유|접대비|공과금|기타 중 하나","confidence":0~1 사이 전반적 인식 확신도,"low_fields":["확신이 낮은 필드명들"],"personal":개인 지출로 보이면 true(편의점 소액, 개인 물품 등)}, ...]
 읽을 수 없는 값은 빈 문자열 또는 0으로 두고 low_fields에 포함하세요.`;
 
 async function readReceipt(f,key){
   const b64=await toB64(f);
   const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
     headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({model:MODEL,max_tokens:1000,messages:[{role:"user",content:[
+    body:JSON.stringify({model:MODEL,max_tokens:4000,messages:[{role:"user",content:[
       {type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:PROMPT}]}]})});
   if(!r.ok){throw new Error((await r.text()).slice(0,200))}
   const j=await r.json();const t=j.content.map(c=>c.text||"").join("");
-  const m=t.match(/\{[\s\S]*\}/);if(!m)throw new Error("응답 해석 실패");
-  const o=JSON.parse(m[0]);
-  return {date:o.date||"",store:o.store||"",items:o.items||"",amount:+o.amount||0,vat:+o.vat||0,
+  const m=t.match(/\[[\s\S]*\]/);if(!m)throw new Error("응답 해석 실패");
+  const arr=JSON.parse(m[0]);
+  if(!arr.length)throw new Error("영수증을 찾지 못했습니다");
+  return arr.map(o=>({date:o.date||"",store:o.store||"",items:o.items||"",amount:+o.amount||0,vat:+o.vat||0,
     payment:PAY.includes(o.payment)?o.payment:"기타",category:CATS.includes(o.category)?o.category:"기타",
-    low:o.low_fields||[],conf:+o.confidence||0,personal:!!o.personal};
+    low:o.low_fields||[],conf:+o.confidence||0,personal:!!o.personal}));
 }
 
 async function summarize(){
@@ -196,7 +198,7 @@ async function summarize(){
   $("btnSum").disabled=true;rows=[];
   for(let i=0;i<files.length;i++){
     $("status").textContent=`분석 중... ${i+1}/${files.length}`;
-    try{rows.push(await readReceipt(files[i],key))}
+    try{rows.push(...await readReceipt(files[i],key))}
     catch(e){rows.push({date:"",store:"(인식 실패) "+files[i].name,items:String(e.message).slice(0,60),amount:0,vat:0,payment:"기타",category:"기타",low:["date","store","amount"],conf:0,personal:false})}
   }
   $("btnSum").disabled=false;$("status").textContent="완료: "+rows.length+"건";
