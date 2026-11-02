@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>파주 스마트워크 업무자동화 시연</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{--navy:#151a45;--char:#2a2e3a;--bg:#f3f4f8;--pri:#fe4728;--gold:#c9a24b;--line:#e1e4ec}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",sans-serif;background:var(--bg)}
+header{background:var(--navy);color:#fff;padding:22px 32px;position:relative;overflow:hidden}
+header::after{content:"";position:absolute;right:-60px;top:-40px;width:300px;height:200px;background:var(--pri);transform:skewX(-24deg)}
+header::before{content:"";position:absolute;right:190px;top:-40px;width:44px;height:200px;background:var(--gold);transform:skewX(-24deg)}
+header>*{position:relative;z-index:1}
+header{display:flex;align-items:center;gap:28px}
+header img{height:54px;width:auto;display:block}
+.sep{width:2px;align-self:stretch;background:rgba(255,255,255,.25)}
+.ttl{margin-left:12px;cursor:pointer;user-select:none}
+.ttl:hover h1{text-decoration:underline;text-decoration-color:var(--pri);text-underline-offset:6px}
+@media(max-width:700px){header{gap:14px;padding:16px}header img{height:36px}.ttl{margin-left:0}header h1{font-size:20px}}
+.eyebrow{color:var(--pri);font-weight:800;letter-spacing:4px;font-size:12px;margin-bottom:6px}
+header h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.5px}
+header small{opacity:.75}
+nav{display:grid;grid-template-columns:.6fr 1fr 1fr 1fr;gap:14px;padding:14px 20px;background:#fff;border-bottom:1px solid var(--line)}
+nav button{font:inherit;font-size:17px;font-weight:900;padding:16px 8px;border-radius:16px;border:2px solid var(--line);background:#fafaff;color:var(--navy);cursor:pointer;transition:.15s}
+nav button small{display:block;font-size:12px;font-weight:400;color:#777;margin-top:4px}
+nav button:hover{border-color:var(--pri);transform:translateY(-1px)}
+nav button.on{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:inset 0 -4px 0 var(--pri)}
+nav button.on small{color:#dbe4ff}
+main{flex:1;position:relative;min-height:0}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;display:none}
+.hello{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#2a2e3a 60%,#151a45);color:#fff;font-size:18px;text-align:center;line-height:1.8;position:relative;overflow:hidden}
+.hello::after{content:"";position:absolute;left:-80px;bottom:-60px;width:380px;height:220px;background:var(--pri);transform:skewX(-24deg);opacity:.9}
+.hello>*{position:relative;z-index:1}
+.hello b{display:block;font-size:48px;font-weight:900;letter-spacing:-1px}
+.hello .ey{color:var(--pri);letter-spacing:6px;font-weight:900;font-size:24px;margin-bottom:6px}
+.hello .sub{font-size:26px;font-weight:800;margin-top:10px}
+.hello .sub2{font-size:19px;opacity:.85;margin-top:22px}
+@media(max-width:600px){nav{padding:10px;gap:8px}nav button{font-size:13px;padding:10px 4px}nav button small{font-size:10px}}
+</style>
+</head>
+<body>
+<header>
+  <img src="logo-gptclass.png" alt="gptClass" onclick="home()" title="첫 화면으로 이동" style="cursor:pointer">
+  <div class="sep"></div>
+  <div class="ttl" onclick="home()" title="첫 화면으로 이동"><div class="eyebrow">PAJU SMART WORK</div><h1>파주 스마트워크 업무자동화 시연</h1><small>버튼을 눌러 시연할 화면을 선택하세요</small></div>
+</header>
+<nav>
+  <button id="b0" onclick="home()">처음으로 가기<small>첫 화면으로 이동</small></button>
+  <button id="b1" onclick="show(1)">영수증 대시보드<small>영수증 사진 → 지출 요약 → 엑셀 정리</small></button>
+  <button id="b2" onclick="show(2)">급여계산기<small>급여 계산 → 임금명세서 출력</small></button>
+  <button id="b3" onclick="show(3)">할인 손익 계산기<small>할인·1+1 → 본전 판매량 비교</small></button>
+</nav>
+<main>
+  <div class="hello" id="hello"><div class="ey">AI × 업무자동화</div><b>일하는 방식을 바꾸다</b><div class="sub">반복 업무는 AI에게, 사장님은 경영에</div><div class="sub2">사진 한 장, 클릭 한 번으로 매달 하던 일이 끝납니다.</div><div style="opacity:.6;margin-top:28px;font-size:15px">위의 버튼을 눌러 시연을 시작하세요</div></div>
+  <iframe id="f"></iframe>
+</main>
+<script>
+const pages={1:"영수증대시보드_온라인.html",2:"급여계산기.html",3:"할인이벤트손익계산기.html"};
+function show(n){
+  const f=document.getElementById("f");
+  document.getElementById("hello").style.display="none";
+  f.style.display="block";
+  if(f.getAttribute("src")!==pages[n])f.src=pages[n];
+  document.getElementById("b1").classList.toggle("on",n===1);
+  document.getElementById("b2").classList.toggle("on",n===2);
+  document.getElementById("b3").classList.toggle("on",n===3);
+}
+function home(){
+  const f=document.getElementById("f");
+  f.style.display="none";f.removeAttribute("src");
+  document.getElementById("hello").style.display="";
+  document.getElementById("b1").classList.remove("on");
+  document.getElementById("b2").classList.remove("on");
+  document.getElementById("b3").classList.remove("on");
+}
+</script>
+</body>
+</html>
